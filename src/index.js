@@ -39,11 +39,11 @@ async function getMovies() {
 
   var page_num = Math.floor(Math.random() * 50)
 
-  for (let i = page_num; i <= page_num + 5; i++) {
+  for (let i = page_num; i <= page_num+5; i++) {
     var poster_response = await axios.get("https://api.themoviedb.org/3/discover/movie?api_key=b2b545d1cf651d50f3a842fea2a3add6&vote_count.gte=3000&sort_by=popularity.desc&page=" + i)
     
     for (let j = 0; j < poster_response.data.results.length; j++) {
-      var omdb_response = await axios.get("http://www.omdbapi.com/?t=" + poster_response.data.results[j].original_title + "&apikey=59401cd")
+      var omdb_response = await axios.get("https://www.omdbapi.com/?t=" + poster_response.data.results[j].original_title + "&apikey=59401cd")
 
       if(omdb_response.data.imdbRating === undefined) continue
 
