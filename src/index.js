@@ -62,20 +62,45 @@ async function getMovies() {
   return movie_data
 }
 
+function getRandom(arr, n) {
+  var result = new Array(n),
+      len = arr.length,
+      taken = new Array(len);
+  if (n > len)
+      throw new RangeError("getRandom: more elements taken than available");
+  while (n--) {
+      var x = Math.floor(Math.random() * len);
+      result[n] = arr[x in taken ? taken[x] : x];
+      taken[x] = --len in taken ? taken[len] : len;
+  }
+  return result;
+}
+
 class Game extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      movie_data: [{
-        'title': 'foo',
-        'poster': 'bar',
-        'release_date': 'foo',
-        'box_office': 'bar',
-        'imdb_rating': -1
-      }],
-      rands: [Math.random(), Math.random()],
-      streak: 0
+      movie_data: [
+        {
+          'title': 'foo',
+          'poster': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif',
+          'release_date': 'foo',
+          'box_office': 'bar',
+          'imdb_rating': -1
+        },
+        {
+          'title': 'foo',
+          'poster': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif',
+          'release_date': 'foo',
+          'box_office': 'bar',
+          'imdb_rating': -1
+        }
+      ],
+      movies: [],
+      streak: 0,
+      high_score: 0,
+      i: -1
     };
   }
 
@@ -93,78 +118,88 @@ class Game extends React.Component {
     );
   }
 
-  handleClick(val, rands) {
-    var movie_one = this.state.movie_data[Math.floor(rands[0] * this.state.movie_data.length)]
-    var movie_two = this.state.movie_data[Math.floor(rands[1] * this.state.movie_data.length)]
-    
-    console.log(movie_one.imdb_rating)
-    console.log(movie_two.imdb_rating)
-
-    var is_correct = (val === "Higher") ? (movie_one.imdb_rating <= movie_two.imdb_rating) : (movie_one.imdb_rating >= movie_two.imdb_rating)
+  handleClick(val, movies) {
+    var is_correct = (val === "Higher") ? (movies[0].imdb_rating <= movies[1].imdb_rating) : (movies[0].imdb_rating >= movies[1].imdb_rating)
 
     console.log(is_correct)
 
     if(is_correct) {
-      const movie_data = this.state.movie_data.slice()
-      movie_data.splice(Math.floor(rands[0] * this.state.movie_data.length), 1)
+      var movie_data = this.state.movie_data.slice()
+      var index = movie_data.map(function (movie) { return movie.poster; }).indexOf(movies[0].poster)
+      movie_data.splice(index, 1)
+
+      index = movie_data.map(function (movie) { return movie.poster; }).indexOf(movies[1].poster)
+      var new_movie = getRandom(movie_data, 1)
+      movies = [movie_data[index]].concat(new_movie)
 
       this.setState({
         movie_data: movie_data,
-        rands:[rands[1], Math.random()],
-        streak: this.state.streak + 1
+        movies: movies,
+        streak: this.state.streak + 1,
+        high_score: Math.max(this.state.high_score, this.state.streak + 1),
+        i: index
       })
 
       console.log("Streak: " + (this.state.streak + 1))
     }
     else {
       this.setState({
-        rands: [Math.random(), Math.random()],
-        streak: 0
+        movies: getRandom(this.state.movie_data, 2),
+        streak: 0,
+        high_score: Math.max(this.state.high_score, this.state.streak),
+        i: -1
       })
     }
   }
 
-  renderButton(val, rands) {
+  renderButton(val, movies) {
     return (
       <Button
         value={val}
-        onClick={() => this.handleClick(val, rands)}
+        onClick={() => this.handleClick(val, movies)}
       />
     );
   }
 
   render() {
-    var rands = this.state.rands
 
-    var movie_one = this.state.movie_data[Math.floor(rands[0] * this.state.movie_data.length)]
-    var movie_two = this.state.movie_data[Math.floor(rands[1] * this.state.movie_data.length)]
+    var movie_data = this.state.movie_data.slice()
+    var movies = this.state.movies.slice()
+    
+    if(movies.length === 0) movies = getRandom(movie_data, 2)
+
+    console.log(movie_data)
+    console.log(movies)
 
     return (
       <div>
         <table>
           <th>
-            {movie_one.title}
+            {movies[0].title}
           </th>
           <th>
-            {movie_two.title}
+            {movies[1].title}
+          </th>
+          <th>
+            High Score: {(this.state.high_score)}
           </th>
           <th>
             Streak: {(this.state.streak)}
           </th>
           <tr>
             <td>
-              {this.renderPoster(movie_one.poster)}
+              {this.renderPoster(movies[0].poster)}
             </td>
             <td>
-              {this.renderPoster(movie_two.poster)}
+              {this.renderPoster(movies[1].poster)}
             </td>
           </tr>
           <tr>
             <td>
-              {movie_one.title} is rated {movie_one.imdb_rating} on IMDB
+              {movies[0].title} is rated {movies[0].imdb_rating} on IMDB
             </td>
             <td>
-              {movie_two.title} is rated {this.renderButton("Higher", rands)} or {this.renderButton("Lower", rands)} than {movie_one.title}
+              {movies[1].title} is rated {this.renderButton("Higher", movies)} or {this.renderButton("Lower", movies)} than {movies[0].title}
             </td>
           </tr>
         </table>
